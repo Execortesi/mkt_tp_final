@@ -1,4 +1,4 @@
-customer_sk,customer_id,email,first_name,last_name,phone,status,created_at
+customer_sk,customer_bk,email,first_name,last_name,phone,status,created_at
 1,1,maría.gonzález.1@example.com,María,González,+54 9 11 4657-3286,A,2025-03-31 23:30:11
 2,2,maría.silva.2@example.com,María,Silva,+54 9 11 1520-1488,A,2023-11-09 12:39:26
 3,3,juan.pérez.3@example.com,Juan,Pérez,+54 9 11 1434-4257,A,2024-03-01 17:06:48

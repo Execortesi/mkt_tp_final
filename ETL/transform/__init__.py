@@ -5,8 +5,8 @@ from .build_dim_channel import build_dim_channel
 from .build_dim_customer import transform_dim_customer
 from .build_dim_product import transform_dim_product
 from .build_dim_store import transform_dim_store
-from .build_dim_location import transform_dim_location
-from .build_dim_date import transform_dim_date
+from .build_dim_address import build_dim_address
+from .build_dim_calendar import transform_dim_calendar
 
 # FACTS
 from .build_fact_order import transform_fact_order
@@ -22,8 +22,8 @@ def transform_dimensions(raw_data: dict[str, pd.DataFrame]) -> dict[str, pd.Data
         "dim_customer": transform_dim_customer(raw_data),
         "dim_product": transform_dim_product(raw_data),
         "dim_store": transform_dim_store(raw_data),
-        "dim_location": transform_dim_location(raw_data),
-        "dim_date": transform_dim_date(raw_data),
+        "dim_adress": build_dim_address(raw_data),
+        "dim_date": transform_dim_calendar(raw_data),
     }
 
 def transform_facts(raw_data: dict[str, pd.DataFrame], dims: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:

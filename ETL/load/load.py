@@ -16,3 +16,9 @@ def load_data_to_dw(transformed_data: dict[str, pd.DataFrame], dw_dir: str = "DW
         print(f" -> Tabla '{out_path.name}' guardada.")
 
     print("--- ✅ Carga completada ---\n")
+
+def save_one_big_table(df, output_dir):
+    out = Path(output_dir) / "one_big_table.csv"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out, index=False, encoding="utf-8")
+    print("-> Tabla 'one_big_table.csv' guardada.")

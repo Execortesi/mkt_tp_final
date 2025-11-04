@@ -1,5 +1,5 @@
-store_sk,store_id,name,address_id
-1,1,Tienda BA,1
-2,2,Tienda CBA,2
-3,3,Tienda SF,3
-4,4,Tienda MZA,4
+store_sk,store_bk,name,address_bk,city,province_id,postal_code,country_code
+1,1,Tienda BA,1,Buenos Aires,1,1001,AR
+2,2,Tienda CBA,2,Córdoba,2,1002,AR
+3,3,Tienda SF,3,Santa Fe,3,1003,AR
+4,4,Tienda MZA,4,Mendoza,4,1004,AR
