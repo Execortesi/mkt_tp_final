@@ -15,10 +15,11 @@ def run_dimensions():
 
 def run_facts():
     raw = extract_raw_data(RAW_DIR)
-    dims = {}  # si quisieras leer dims del disco, acá podrías cargarlas
+    dims = transform_dimensions(raw)
     facts = transform_facts(raw, dims)
     load_data_to_dw(facts, DW_DIR)
     print("✅ Hechos generados.")
+
 
 def run_obt():
     raw = extract_raw_data(RAW_DIR)

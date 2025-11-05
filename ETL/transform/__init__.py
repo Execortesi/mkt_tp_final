@@ -9,8 +9,8 @@ from .build_dim_address import build_dim_address
 from .build_dim_calendar import transform_dim_calendar
 
 # FACTS
-from .build_fact_order import transform_fact_order
-from .build_fact_order_item import transform_fact_order_item
+from .build_fact_sales_order import transform_fact_sales_order
+from .build_fact_sales_order_item import transform_fact_sales_order_item
 from .build_fact_payment import transform_fact_payment
 from .build_fact_shipment import transform_fact_shipment
 from .build_fact_web_session import transform_fact_web_session
@@ -28,8 +28,8 @@ def transform_dimensions(raw_data: dict[str, pd.DataFrame]) -> dict[str, pd.Data
 
 def transform_facts(raw_data: dict[str, pd.DataFrame], dims: dict[str, pd.DataFrame]) -> dict[str, pd.DataFrame]:
     return {
-        "fact_order": transform_fact_order(raw_data, dims),
-        "fact_order_item": transform_fact_order_item(raw_data, dims),
+        "fact_sales_order": transform_fact_sales_order(raw_data, dims),
+        "fact_sales_order_item": transform_fact_sales_order_item(raw_data, dims),
         "fact_payment": transform_fact_payment(raw_data, dims),
         "fact_shipment": transform_fact_shipment(raw_data, dims),
         "fact_web_session": transform_fact_web_session(raw_data, dims),

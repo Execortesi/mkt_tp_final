@@ -1,17 +1,17 @@
 import pandas as pd
 
-def transform_fact_payment(raw_data, dims):
+def transform_fact_payment(raw_data: dict, dims: dict) -> pd.DataFrame:
     pay = raw_data["payment"].copy()
-    dim_date = dims.get("dim_date", pd.DataFrame())[["date_sk", "date"]] if "dim_date" in dims else None
+    out_cols = [
+        "payment_id",
+        "order_id",
+        "method",
+        "status",
+        "amount",
+        "paid_at",
+        "transaction_ref",
+    ]
+    out_cols = [c for c in out_cols if c in pay.columns]
 
-    pay = pay.rename(columns={"payment_id": "payment_id", "order_id": "order_id"})
-    if "paid_at" in pay.columns:
-        pay["paid_at"] = pd.to_datetime(pay["paid_at"], errors="coerce")
-        if dim_date is not None and not dim_date.empty:
-            pay = pay.merge(dim_date.rename(columns={"date": "paid_at"}), how="left", on="paid_at")
+    return pay[out_cols].copy()
 
-    cols = ["payment_id", "order_id"]
-    if "date_sk" in pay.columns: cols.append("date_sk")
-    for c in ["amount", "status", "transaction_nr", "transaction_ref"]:
-        if c in pay.columns: cols.append(c)
-    return pay[cols]
