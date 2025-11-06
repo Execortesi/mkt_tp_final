@@ -53,7 +53,7 @@ def transform_dim_calendar(raw_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
     cal["quarter"] = cal["date"].dt.quarter.astype(int)
     cal["week_number"] = cal["date"].dt.isocalendar().week.astype(int)
     cal["year_month"] = cal["date"].dt.strftime("%Y-%m")
-    cal["is_weekend"] = cal["date"].dt.dayofweek >= 5   # bool
+    cal["   "] = cal["date"].dt.dayofweek >= 5   # bool
 
     # Orden final
     cols = [

@@ -2,5 +2,27 @@
 
 Repositorio del trabajo práctico final de la materia.
 
-**Consigna y documento principal:** [Trabajo Práctico Final](https://docs.google.com/document/d/15RNP3FVqLjO4jzh80AAkK6mUR5DOLqPxLjQxqvdzrYg/edit?usp=sharing)
-**Diagrama Entidad Relación:** [DER](./assets/DER.png)
+# Modelos de datos 
+
+## Diagramas de Estrella 
+Se presentan los diagramas de estrella para cada una de las tablas de hechos:
+
+### Fact_sales_order 
+![fact_](./assets/fact_sales_order.jpeg)
+
+### Fact_sales_order_item
+![fact_](./assets/fact_sales_order_item.jpng.jpeg)
+
+### Fact_payment 
+![fact_](./assets/fact_payment.jpng.jpeg)
+
+### Fact_shipment
+![fact_](./assets/fact_shipment.jpng.jpeg)
+
+### Fact_nps_response
+![fact_](./assets/fact_nps_response_id.jpng.jpeg)
+
+### Fact_web_session:
+![fact_](./assets/fact_web_session.jpeg)
+
+
