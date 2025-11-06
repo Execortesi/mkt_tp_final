@@ -14,10 +14,10 @@ Se presentan los diagramas de estrella para cada una de las tablas de hechos:
 ![fact_](./assets/fact_sales_order_item.jpng.jpeg)
 
 ### Fact_payment 
-![fact_](./assets/fact_payment.jpng.jpeg)
+![fact_](./assets/Fact_payment.jpng.jpeg)
 
 ### Fact_shipment
-![fact_](./assets/fact_shipment.jpng.jpeg)
+![fact_](./assets/Fact_shipment.jpng.jpeg)
 
 ### Fact_nps_response
 ![fact_](./assets/fact_nps_response_id.jpng.jpeg)
