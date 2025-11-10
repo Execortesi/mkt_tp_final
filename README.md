@@ -14,8 +14,6 @@ A partir de un conjunto de datos transaccionales de una empresa de comercio elec
 
 El proyecto fue desarrollado siguiendo buenas prácticas de ingeniería de datos: modularización del código, control de versiones con Git, entorno virtual gestionado con `venv` y documentación completa mediante este archivo `README.md`.
 
----
-
 ## 🗂️ Estructura del Repositorio
 
 ```bash
@@ -48,21 +46,15 @@ Para ejecutar correctamente el proyecto, es necesario contar con las siguientes 
 - **Pathlib** → manejo de rutas de archivos.  
 - **venv** → creación de entornos virtuales.  
 
----
-
 ## 🚀 Instrucciones de Ejecución
 
 A continuación se detallan los pasos necesarios para ejecutar el proceso ETL completo del proyecto.
-
----
 
 ### 1️⃣ Clonar el repositorio
 
 ```bash
 git clone https://github.com/Execortesi/mkt_tp_final.git
 cd mkt_tp_final
-
----
 
 ### 2️⃣ Crear y activar un entorno virtual
 
@@ -77,22 +69,16 @@ source venv/bin/activate
 # En Windows (PowerShell):
 venv\Scripts\activate
 
----
-
 ### 3️⃣ Instalar dependencias 
 
 ```bash
 pip install -r requirements.txt
-
----
 
 ### 4️⃣ Ejecutar el proceso ETL
 
 ```bash
 # Ejecutar todas las etapas (dimensiones y hechos)
 python main.py --step=all
-
----
 
 ## 🧾 Diccionario de Datos
 
@@ -300,4 +286,3 @@ Se presentan los diagramas de estrella para cada una de las tablas de hechos:
 - Los datos se consideran **limpios y consistentes**, sin valores nulos críticos ni duplicados.  
 - Las **tablas de hechos** representan transacciones y eventos: pedidos, pagos, envíos, sesiones web y respuestas NPS.  
 - El proceso ETL se ejecuta desde `main.py`, generando automáticamente los archivos `.csv` en la carpeta `DW/` listos para análisis en Looker Studio.
-
