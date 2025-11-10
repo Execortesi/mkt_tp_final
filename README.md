@@ -303,3 +303,16 @@ Se presentan los diagramas de estrella para cada una de las tablas de hechos:
 - Los datos se consideran **limpios y consistentes**, sin valores nulos críticos ni duplicados.  
 - Las **tablas de hechos** representan transacciones y eventos: pedidos, pagos, envíos, sesiones web y respuestas NPS.  
 - El proceso ETL se ejecuta desde `main.py`, generando automáticamente los archivos `.csv` en la carpeta `DW/` listos para análisis en Looker Studio.
+
+## 📊 Dashboard 
+El análisis final del proyecto se realizó mediante un dashboard interactivo en Looker Studio, utilizando como fuente principal la tabla One Big Table (OBT) generada en el proceso ETL.
+
+La OBT consolida la información proveniente de todas las tablas de dimensión y hechos, permitiendo una integración completa de datos para construir visualizaciones dinámicas y comparativas entre ventas, clientes, canales y satisfacción.
+
+📎 Acceso al dashboard: 
+
+## 👤 Autor
+
+Exequiel Cortesi
+
+💻 Estudiante de la Licenciatura en Ciencias de Datos 
