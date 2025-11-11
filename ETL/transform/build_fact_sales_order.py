@@ -12,7 +12,7 @@ def transform_fact_sales_order(raw_data: dict, dims: dict) -> pd.DataFrame:
     # Asegurar tipos de fecha
     so["order_date"] = pd.to_datetime(so["order_date"])
 
-    dd = dims["dim_date"][["date_sk", "date"]].copy()
+    dd = dims["dim_calendar"][["date_sk", "date"]].copy()
     dd["date"] = pd.to_datetime(dd["date"])
 
     # Mapear order_date -> order_date_id (date_sk)
