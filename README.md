@@ -173,7 +173,7 @@ A continuación se detalla el diccionario de datos correspondiente al Data Wareh
 
 ---
 
-#### dim_date
+#### dim_calendar 
 | Campo         | Tipo     | Clave | Descripción                                  |
 |---------------|----------|--------|----------------------------------------------|
 | date_sk       | INT      | PK     | Identificador único de la fecha (AAAAMMDD).  |
