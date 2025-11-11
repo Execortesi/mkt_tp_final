@@ -1,28 +1,36 @@
 import pandas as pd
 
-def _safe_merge(left: pd.DataFrame, right: pd.DataFrame, on: list[str] | str,
-                how: str = "left", suffixes: tuple[str, str] = ("", "_r")) -> pd.DataFrame:
+def _safe_merge(
+    left: pd.DataFrame,
+    right: pd.DataFrame,
+    on: list[str] | str,
+    how: str = "left",
+    suffixes: tuple[str, str] = ("", "_r"),
+) -> pd.DataFrame:
+    """
+    Merge seguro: si 'right' está vacío o faltan claves, devuelve 'left' sin romper.
+    """
     if left is None or right is None or len(right) == 0:
         return left
-    # asegurar que las keys existen en ambos lados
-    if isinstance(on, str):
-        keys = [on]
-    else:
-        keys = on
+    keys = [on] if isinstance(on, str) else list(on)
     for k in keys:
         if k not in left.columns or k not in right.columns:
             return left
     return left.merge(right, how=how, on=on, suffixes=suffixes)
 
-def build_one_big_table(raw: dict[str, pd.DataFrame],
-                        dims: dict[str, pd.DataFrame],
-                        facts: dict[str, pd.DataFrame]) -> pd.DataFrame:
+
+def build_one_big_table(
+    raw: dict[str, pd.DataFrame],
+    dims: dict[str, pd.DataFrame],
+    facts: dict[str, pd.DataFrame],
+) -> pd.DataFrame:
     """
     One Big Table a nivel línea de pedido (sales_order_item):
-    - Parte de fact_sales_order_item
-    - Enriquece con cabecera (fact_sales_order)
-    - Enriquece con dims: product, customer, store, address (billing/shipping), province, date, channel
-    - Nombres compatibles con el PDF (BKs donde corresponde)
+
+    - Base: fact_sales_order_item
+    - Enriquecimiento: fact_sales_order (cabecera)
+    - Dimensiones: product, customer, store, address (billing/shipping), province, date, channel
+    - La fecha se une por 'order_date' (no por *_id)
     """
 
     # ---------------------------
@@ -32,8 +40,7 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     if soi.empty:
         raise ValueError("fact_sales_order_item está vacío. Generá los facts primero.")
 
-    # columnas mínimas esperadas
-    # order_item_id, order_id, product_id, quantity, unit_price, discount_amount, line_total
+    # asegurar métricas mínimas
     for c in ["discount_amount", "line_total"]:
         if c not in soi.columns:
             soi[c] = 0
@@ -45,33 +52,40 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     if so.empty:
         raise ValueError("fact_sales_order está vacío. Generá los facts primero.")
 
-    # join por order_id (BK)
+    # JOIN por order_id (BK)
     obt = _safe_merge(soi, so, on="order_id")
 
     # ---------------------------
-    # 3) Fecha del pedido (dim_date por order_date_id)
+    # 3) Fecha del pedido (JOIN por order_date)
     # ---------------------------
     dd = dims.get("dim_date", pd.DataFrame()).copy()
     if not dd.empty:
-        dd = dd.rename(columns={
-            "date_sk": "order_date_id",
-            "date": "order_date"
-        })
-        keep_date = ["order_date_id", "order_date", "day", "month", "year",
-                     "day_name", "month_name", "quarter", "week_number", "year_month", "is_weekend"]
+        # renombramos 'date' -> 'order_date' para matchear con sales_order
+        dd = dd.rename(columns={"date": "order_date"})
+        keep_date = [
+            "order_date",      # para hacer el join
+            "date_sk",         # útil para ordenar en Looker
+            "day", "month", "year",
+            "month_name", "day_name",
+            "quarter", "week_number", "is_weekend",
+            "year_month",
+        ]
         keep_date = [c for c in keep_date if c in dd.columns]
-        obt = _safe_merge(obt, dd[keep_date], on="order_date_id")
+        obt = _safe_merge(obt, dd[keep_date], on="order_date")
 
     # ---------------------------
     # 4) Producto (dim_product por product_id = product_bk)
     # ---------------------------
     dp = dims.get("dim_product", pd.DataFrame()).copy()
     if not dp.empty:
-        dp = dp.rename(columns={
-            "product_bk": "product_id"
-        })
-        keep_prod = ["product_id", "sku", "name", "category_bk", "category_name",
-                     "category_parent_bk", "list_price", "status"]
+        # alinear claves
+        if "product_bk" in dp.columns and "product_id" not in dp.columns:
+            dp = dp.rename(columns={"product_bk": "product_id"})
+        keep_prod = [
+            "product_id", "sku", "name",
+            "category_bk", "category_name", "category_parent_bk",
+            "list_price", "status",
+        ]
         keep_prod = [c for c in keep_prod if c in dp.columns]
         obt = _safe_merge(obt, dp[keep_prod], on="product_id")
 
@@ -80,8 +94,7 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     # ---------------------------
     dc = dims.get("dim_customer", pd.DataFrame()).copy()
     if not dc.empty:
-        # tu dim_customer puede tener customer_bk como BK
-        if "customer_bk" in dc.columns:
+        if "customer_bk" in dc.columns and "customer_id" not in dc.columns:
             dc = dc.rename(columns={"customer_bk": "customer_id"})
         keep_cust = ["customer_id", "email", "first_name", "last_name", "phone", "status", "created_at"]
         keep_cust = [c for c in keep_cust if c in dc.columns]
@@ -91,11 +104,20 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     # 6) Canal (dim_channel por channel_id)
     # ---------------------------
     ch = dims.get("dim_channel", pd.DataFrame()).copy()
-    if not ch.empty and "channel_id" in ch.columns:
-        keep_ch = ["channel_id", "code", "name"]
-        keep_ch = [c for c in keep_ch if c in ch.columns]
-        # renombramos para no pisar campos genéricos
-        ch = ch[keep_ch].rename(columns={"name": "channel_name", "code": "channel_code"})
+    if not ch.empty:
+        keep_ch = []
+        if "channel_id" in ch.columns:
+            keep_ch.append("channel_id")
+        # mapeamos a nombres esperados
+        name_col = "name" if "name" in ch.columns else None
+        code_col = "code" if "code" in ch.columns else None
+        if code_col: keep_ch.append(code_col)
+        if name_col: keep_ch.append(name_col)
+
+        ch = ch[keep_ch].rename(columns={
+            code_col or "code": "channel_code",
+            name_col or "name": "channel_name",
+        })
         obt = _safe_merge(obt, ch, on="channel_id")
 
     # ---------------------------
@@ -103,7 +125,7 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     # ---------------------------
     ds = dims.get("dim_store", pd.DataFrame()).copy()
     if not ds.empty:
-        if "store_bk" in ds.columns:
+        if "store_bk" in ds.columns and "store_id" not in ds.columns:
             ds = ds.rename(columns={"store_bk": "store_id"})
         keep_store = ["store_id", "name", "address_bk", "city", "province_id", "postal_code", "country_code"]
         keep_store = [c for c in keep_store if c in ds.columns]
@@ -111,13 +133,14 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
         obt = _safe_merge(obt, ds, on="store_id")
 
     # ---------------------------
-    # 8) Direcciones (billing / shipping) + Provincia
+    # 8) Direcciones (billing / shipping) + Provincia (nombres)
     # ---------------------------
     da = dims.get("dim_address", pd.DataFrame()).copy()
     if not da.empty:
-        # billing
         keep_addr = ["address_bk", "line1", "line2", "city", "province_id", "postal_code", "country_code"]
         keep_addr = [c for c in keep_addr if c in da.columns]
+
+        # billing
         billing = da[keep_addr].rename(columns={
             "address_bk": "billing_address_id",
             "line1": "billing_line1",
@@ -141,20 +164,17 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
         })
         obt = _safe_merge(obt, shipping, on="shipping_address_id")
 
-        # Provincias
+        # Provincias (para nombres/códigos)
         dpv = dims.get("dim_province", pd.DataFrame()).copy()
         if not dpv.empty:
-            # Asegurar BK
-            if "province_bk" in dpv.columns:
+            # normalizamos claves
+            if "province_bk" in dpv.columns and "province_id" not in dpv.columns:
                 dpv = dpv.rename(columns={"province_bk": "province_id"})
             keep_prov = ["province_id", "name", "code"]
             keep_prov = [c for c in keep_prov if c in dpv.columns]
-            dpv = dpv[keep_prov].rename(columns={
-                "name": "province_name",
-                "code": "province_code"
-            })
+            dpv = dpv[keep_prov].rename(columns={"name": "province_name", "code": "province_code"})
 
-            # attach billing province
+            # attach billing province (nombre y código)
             bp = dpv.rename(columns={
                 "province_id": "billing_province_id",
                 "province_name": "billing_province_name",
@@ -162,7 +182,7 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
             })
             obt = _safe_merge(obt, bp, on="billing_province_id")
 
-            # attach shipping province
+            # attach shipping province (nombre y código)
             sp = dpv.rename(columns={
                 "province_id": "shipping_province_id",
                 "province_name": "shipping_province_name",
@@ -176,8 +196,6 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     if "line_total" not in obt.columns and {"quantity", "unit_price", "discount_amount"}.issubset(obt.columns):
         obt["line_total"] = obt["quantity"] * obt["unit_price"] - obt["discount_amount"]
 
-    # ticket_total ≈ sumar por order_id en dashboards; acá mantenemos métricas a nivel línea
-
     # ---------------------------
     # 10) Orden y limpieza final
     # ---------------------------
@@ -189,7 +207,10 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
         # cabecera pedido
         "customer_id", "channel_id", "channel_code", "channel_name",
         "store_id", "store_name",
-        "order_date_id", "order_date", "day", "month", "year", "year_month", "quarter", "week_number", "is_weekend",
+        # fecha (incluye SK por si lo usás para ordenar)
+        "order_date", "date_sk", "day", "month", "year", "year_month",
+        "quarter", "week_number", "is_weekend", "day_name", "month_name",
+        # direcciones y totales
         "billing_address_id", "shipping_address_id",
         "status", "currency_code", "subtotal", "tax_amount", "shipping_fee", "total_amount",
         # producto
@@ -203,11 +224,12 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
         "shipping_line1", "shipping_line2", "shipping_city", "shipping_postal_code", "shipping_country_code",
         "shipping_province_id", "shipping_province_name", "shipping_province_code",
     ]
-    # conserva solo las que existen realmente
     final_cols = [c for c in final_cols_order if c in obt.columns]
     obt = obt[final_cols].copy()
 
     return obt
+
+
 
 
 

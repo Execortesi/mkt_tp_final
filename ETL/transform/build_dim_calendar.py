@@ -1,66 +1,52 @@
 import pandas as pd
-from datetime import datetime, timedelta
 
-def _collect_datetimes(raw: dict[str, pd.DataFrame], table: str, cols: list[str]) -> list[pd.Series]:
-    if table not in raw:
-        return []
-    df = raw[table]
-    out = []
-    for c in cols:
-        if c in df.columns:
-            out.append(pd.to_datetime(df[c], errors="coerce"))
-    return out
+def _from_series(s: pd.Series) -> pd.DataFrame:
+    s = pd.to_datetime(s.dropna().unique())
+    df = pd.DataFrame({"date": s})
 
-def transform_dim_calendar(raw_data: dict[str, pd.DataFrame]) -> pd.DataFrame:
-    # Recolectamos todas las columnas de fechas relevantes (si existen)
-    candidates: list[pd.Series] = []
-    candidates += _collect_datetimes(raw_data, "sales_order",   ["order_date"])
-    candidates += _collect_datetimes(raw_data, "shipment",      ["shipped_at", "delivered_at"])
-    candidates += _collect_datetimes(raw_data, "web_session",   ["started_at", "ended_at"])
-    candidates += _collect_datetimes(raw_data, "nps_response",  ["responded_at"])
-    candidates += _collect_datetimes(raw_data, "customer",      ["created_at"])
-    candidates += _collect_datetimes(raw_data, "address",       ["created_at"])
-    candidates += _collect_datetimes(raw_data, "product",       ["created_at"])
-    # (agregá más si tu dataset crudo tiene otras fechas)
+    # Clave y desgloses
+    df["date_sk"] = df["date"].dt.strftime("%Y%m%d").astype(int)
+    df["year"] = df["date"].dt.year
+    df["quarter"] = df["date"].dt.quarter
+    df["month"] = df["date"].dt.month
+    df["month_name"] = df["date"].dt.month_name(locale="es_ES") if hasattr(df["date"].dt, "month_name") else df["date"].dt.month_name()
+    df["day"] = df["date"].dt.day
+    df["dow"] = df["date"].dt.dayofweek + 1  # 1=Lunes … 7=Domingo
+    df["day_name"] = df["date"].dt.day_name(locale="es_ES") if hasattr(df["date"].dt, "day_name") else df["date"].dt.day_name()
+    # semana ISO (1–53)
+    try:
+        df["week_number"] = df["date"].dt.isocalendar().week.astype(int)
+    except Exception:
+        df["week_number"] = df["date"].dt.isocalendar().week
+    # fin de semana
+    df["is_weekend"] = df["dow"].isin([6, 7])
+    # YYYY-MM útil para Looker Studio
+    df["year_month"] = df["date"].dt.strftime("%Y-%m")
 
-    if candidates:
-        s = pd.concat(candidates).dropna()
-        if not s.empty:
-            min_d = s.min().normalize()
-            max_d = s.max().normalize()
-        else:
-            min_d = (pd.Timestamp.today() - pd.Timedelta(days=365)).normalize()
-            max_d = (pd.Timestamp.today() + pd.Timedelta(days=365)).normalize()
-    else:
-        # Fallback por si no hay fechas en crudo
-        min_d = (pd.Timestamp.today() - pd.Timedelta(days=365)).normalize()
-        max_d = (pd.Timestamp.today() + pd.Timedelta(days=365)).normalize()
-
-    # Garantizamos al menos un día
-    if min_d > max_d:
-        min_d, max_d = max_d, min_d
-
-    dates = pd.date_range(start=min_d, end=max_d, freq="D")
-    cal = pd.DataFrame({"date": dates})
-
-    # Campos solicitados en el PDF
-    cal["date_sk"] = (cal["date"].dt.year * 10000 + cal["date"].dt.month * 100 + cal["date"].dt.day).astype(int)
-    cal["day"] = cal["date"].dt.day.astype(int)
-    cal["month"] = cal["date"].dt.month.astype(int)
-    cal["year"] = cal["date"].dt.year.astype(int)
-    cal["day_name"] = cal["date"].dt.day_name()        # (queda en inglés salvo que tengas locale en español)
-    cal["month_name"] = cal["date"].dt.month_name()
-    cal["quarter"] = cal["date"].dt.quarter.astype(int)
-    cal["week_number"] = cal["date"].dt.isocalendar().week.astype(int)
-    cal["year_month"] = cal["date"].dt.strftime("%Y-%m")
-    cal["   "] = cal["date"].dt.dayofweek >= 5   # bool
-
-    # Orden final
+    # Orden y salida
     cols = [
-        "date_sk", "date", "day", "month", "year",
-        "day_name", "month_name", "quarter", "week_number",
-        "year_month", "is_weekend"
+        "date_sk", "date",
+        "year", "quarter", "month", "month_name",
+        "day", "dow", "day_name",
+        "week_number", "is_weekend", "year_month"
     ]
-    # Surrogate key opcional: usamos date_sk como PK, no agrego otra SK
-    return cal[cols].sort_values("date_sk").reset_index(drop=True)
+    return df[cols].sort_values("date_sk").reset_index(drop=True)
+
+
+def transform_dim_calendar(raw: dict[str, pd.DataFrame]) -> pd.DataFrame:
+    """
+    Construye dim_date a partir de las fechas de sales_order['order_date'].
+    Espera columna 'order_date' en raw['sales_order'].
+    """
+    so = raw.get("sales_order", pd.DataFrame()).copy()
+    if so.empty or "order_date" not in so.columns:
+        # Devuelve dim vacía pero con columnas correctas para evitar KeyError aguas arriba
+        empty = pd.DataFrame(columns=[
+            "date_sk","date","year","quarter","month","month_name",
+            "day","dow","day_name","week_number","is_weekend","year_month"
+        ])
+        return empty
+
+    return _from_series(so["order_date"])
+
 
