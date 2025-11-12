@@ -52,11 +52,10 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
             errors="coerce"
         )
 
-    # 3.c) Derivados si finalmente tenemos order_date
     if "order_date" in obt.columns:
-        obt["order_date"] = pd.to_datetime(obt["order_date"], errors="coerce")
-        d = obt["order_date"]
+        d = pd.to_datetime(obt["order_date"], errors="coerce")
         if d.notna().any():
+            # derivadas ANTES de formatear
             obt["day"]        = d.dt.day
             obt["month"]      = d.dt.month
             obt["year"]       = d.dt.year
@@ -67,6 +66,9 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
             except Exception:
                 obt["week_number"] = d.dt.week
             obt["is_weekend"] = (d.dt.dayofweek >= 5)
+
+            # normalización FINAL para Looker: YYYY-MM-DD (tipo fecha reconocible)
+            obt["order_date"] = d.dt.strftime("%Y-%m-%d")
 
 
     # ========= 4) Producto =========
@@ -165,6 +167,10 @@ def build_one_big_table(raw: dict[str, pd.DataFrame],
     # ========= 10) Métrica de línea por si faltara =========
     if "line_total" not in obt.columns and {"quantity","unit_price","discount_amount"}.issubset(obt.columns):
         obt["line_total"] = obt["quantity"] * obt["unit_price"] - obt["discount_amount"]
+    
+    if "ventas_validas_line" not in obt.columns:
+        cond = obt.get("status").isin(["PAID", "FULFILLED"]) if "status" in obt.columns else False
+        obt["ventas_validas_line"] = obt["line_total"].where(cond, 0)
 
     # ========= 11) Orden final =========
     final_cols_order = [
