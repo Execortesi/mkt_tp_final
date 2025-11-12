@@ -309,7 +309,9 @@ El análisis final del proyecto se realizó mediante un dashboard interactivo en
 
 La OBT consolida la información proveniente de todas las tablas de dimensión y hechos, permitiendo una integración completa de datos para construir visualizaciones dinámicas y comparativas entre ventas, clientes, canales y satisfacción.
 
-📎 Acceso al dashboard: 
+📎 Acceso al dashboard:[Abrir en Looker Studio](https://lookerstudio.google.com/reporting/8c8eddfc-4738-4a66-8ebf-1d75d91719e8)
+
+![fact_](./assets/dashboard.jpeg)
 
 ## 👤 Autor
 
