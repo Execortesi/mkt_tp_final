@@ -311,7 +311,7 @@ La OBT consolida la información proveniente de todas las tablas de dimensión y
 
 📎 Acceso al dashboard:[Abrir en Looker Studio](https://lookerstudio.google.com/reporting/8c8eddfc-4738-4a66-8ebf-1d75d91719e8)
 
-![fact_](./assets/dashboard.jpeg)
+![fact_](./assets/dashboard1.jpeg)
 ![fact_](./assets/dashboard2.jpeg)
 
 ## 👤 Autor
